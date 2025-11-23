@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Laboratorios{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <span style="font-size:24px">🔬</span>
+                Sistema de Laboratorios
+            </div>
+            <ul>
+                {% if user.is_authenticated %}
+                <li><a href="{% url 'index' %}">Inicio</a></li>
+                <li><a href="{% url 'calendario' %}">Calendario</a></li>
+                <li><a href="{% url 'mis_reservas' %}">Mis Reservas</a></li>
+                {% if user.is_staff %}
+                <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                <li><a href="{% url 'gestion_equipos' %}">Equipos</a></li>
+                {% endif %}
+                <li style="color:var(--brand)">{{ user.username }}</li>
+                <li><a href="{% url 'logout' %}" class="btn btn-sm btn-neutral">Cerrar Sesión</a></li>
+                {% else %}
+                <li><a href="{% url 'login' %}" class="btn btn-sm btn-primary">Iniciar Sesión</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            🔬 Sistema de Gestión de Laboratorios
+            <p>&copy; 2025 - Todos los derechos reservados</p>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

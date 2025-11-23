@@ -1,0 +1,151 @@
+[
+    {
+        "model": "usuarios.usuario",
+        "pk": 1,
+        "fields": {
+            "username": "admin",
+            "email": "admin@lab.com",
+            "password": "pbkdf2_sha256$390000$fRGV4W4vZOx6f8oOLYEpxy$8dXHkZxKv1ThRjZ5HGh+jO6eGHYzW8Cg+fWY24OkvSM=",
+            "rol": "ADMIN",
+            "first_name": "Administrador",
+            "last_name": "Sistema",
+            "is_staff": true,
+            "is_superuser": true,
+            "is_active": true
+        }
+    },
+    {
+        "model": "usuarios.usuario",
+        "pk": 2,
+        "fields": {
+            "username": "estudiante1",
+            "email": "est1@universidad.edu",
+            "password": "pbkdf2_sha256$390000$fRGV4W4vZOx6f8oOLYEpxy$8dXHkZxKv1ThRjZ5HGh+jO6eGHYzW8Cg+fWY24OkvSM=",
+            "rol": "ESTUDIANTE",
+            "first_name": "María",
+            "last_name": "García",
+            "is_active": true
+        }
+    },
+    {
+        "model": "usuarios.usuario",
+        "pk": 3,
+        "fields": {
+            "username": "estudiante2",
+            "email": "est2@universidad.edu",
+            "password": "pbkdf2_sha256$390000$fRGV4W4vZOx6f8oOLYEpxy$8dXHkZxKv1ThRjZ5HGh+jO6eGHYzW8Cg+fWY24OkvSM=",
+            "rol": "ESTUDIANTE",
+            "first_name": "Juan",
+            "last_name": "Pérez",
+            "is_active": true
+        }
+    },
+    {
+        "model": "equipos.laboratorio",
+        "pk": 1,
+        "fields": {
+            "nombre": "Laboratorio de Computación A",
+            "aforo_maximo": 20,
+            "hora_apertura": "07:00:00",
+            "hora_cierre": "22:00:00"
+        }
+    },
+    {
+        "model": "equipos.equipo",
+        "pk": 1,
+        "fields": {
+            "codigo": "LAB-A-001",
+            "laboratorio": 1,
+            "estado": "DISPONIBLE"
+        }
+    },
+    {
+        "model": "equipos.equipo",
+        "pk": 2,
+        "fields": {
+            "codigo": "LAB-A-002",
+            "laboratorio": 1,
+            "estado": "DISPONIBLE"
+        }
+    },
+    {
+        "model": "equipos.equipo",
+        "pk": 3,
+        "fields": {
+            "codigo": "LAB-A-003",
+            "laboratorio": 1,
+            "estado": "DISPONIBLE"
+        }
+    },
+    {
+        "model": "equipos.equipo",
+        "pk": 4,
+        "fields": {
+            "codigo": "LAB-A-004",
+            "laboratorio": 1,
+            "estado": "DISPONIBLE"
+        }
+    },
+    {
+        "model": "equipos.equipo",
+        "pk": 5,
+        "fields": {
+            "codigo": "LAB-A-005",
+            "laboratorio": 1,
+            "estado": "DISPONIBLE"
+        }
+    },
+    {
+        "model": "equipos.equipo",
+        "pk": 6,
+        "fields": {
+            "codigo": "LAB-A-006",
+            "laboratorio": 1,
+            "estado": "MANTENIMIENTO"
+        }
+    },
+    {
+        "model": "equipos.mantenimiento",
+        "pk": 1,
+        "fields": {
+            "equipo": 6,
+            "fecha_inicio": "2025-11-20T08:00:00Z",
+            "fecha_fin": "2025-11-25T18:00:00Z",
+            "motivo": "Actualización de sistema operativo",
+            "activo": true
+        }
+    },
+    {
+        "model": "reservas.reserva",
+        "pk": 1,
+        "fields": {
+            "usuario": 2,
+            "equipo": 1,
+            "fecha_inicio": "2025-11-23T14:00:00Z",
+            "fecha_fin": "2025-11-23T16:00:00Z",
+            "estado": "ACTIVA"
+        }
+    },
+    {
+        "model": "reservas.reserva",
+        "pk": 2,
+        "fields": {
+            "usuario": 3,
+            "equipo": 2,
+            "fecha_inicio": "2025-11-23T10:00:00Z",
+            "fecha_fin": "2025-11-23T12:00:00Z",
+            "estado": "ACTIVA"
+        }
+    },
+    {
+        "model": "reservas.reserva",
+        "pk": 3,
+        "fields": {
+            "usuario": 2,
+            "equipo": 3,
+            "fecha_inicio": "2025-11-22T14:00:00Z",
+            "fecha_fin": "2025-11-22T16:00:00Z",
+            "estado": "COMPLETADA"
+        }
+    }
+]

@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .filters {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap
+    }
+
+    .filters select,
+    .filters input {
+        padding: 10px;
+        border-radius: 0;
+        border: 1px solid var(--line);
+        background: #0d1118;
+        color: var(--text)
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px
+    }
+
+    .equipo-card {
+        border: 1px solid var(--line);
+        border-radius: 0;
+        padding: 16px;
+        background: #0d1118
+    }
+
+    .equipo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px
+    }
+
+    .equipo-estado {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 0;
+        font-size: 11px;
+        font-weight: 600
+    }
+
+    .estado-disponible {
+        background: rgba(61, 220, 151, .1);
+        color: var(--ok);
+        border: 1px solid var(--ok)
+    }
+
+    .estado-mantenimiento {
+        background: rgba(255, 176, 32, .1);
+        color: var(--warn);
+        border: 1px solid var(--warn)
+    }
+
+    .estado-fuera {
+        background: rgba(255, 77, 77, .1);
+        color: var(--danger);
+        border: 1px solid var(--danger)
+    }
+
+    .empty {
+        padding: 40px;
+        text-align: center;
+        color: var(--muted);
+        border: 1px dashed var(--line);
+        border-radius: 0
+    }
+</style>
+
+<h1 class="mb-3">Gestión de Equipos</h1>
+<p class="lead" style="color:var(--muted);margin-bottom:24px">
+    Administra equipos de laboratorio y su disponibilidad
+</p>
+
+<div class="filters">
+    <select id="laboratorioFilter">
+        <option value="">Todos los laboratorios</option>
+    </select>
+    <select id="estadoFilter">
+        <option value="">Todos los estados</option>
+        <option value="DISPONIBLE">Disponible</option>
+        <option value="MANTENIMIENTO">En Mantenimiento</option>
+        <option value="FUERA_SERVICIO">Fuera de Servicio</option>
+    </select>
+    <button class="btn btn-primary" id="applyFilters">Filtrar</button>
+    <button class="btn btn-neutral" id="clearFilters">Limpiar</button>
+    <button class="btn btn-primary" id="nuevoEquipo">+ Nuevo Equipo</button>
+</div>
+
+<div id="equiposGrid" class="grid"></div>
+<div id="empty" class="empty" style="display:none">
+    No hay equipos para mostrar
+</div>
+
+<!-- Modal para crear/editar equipo -->
+<div id="modalEquipo" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-close" onclick="cerrarModal('modalEquipo')">&times;</span>
+            <span id="modalTitle">Nuevo Equipo</span>
+        </div>
+        <form id="formEquipo">
+            <div class="form-group">
+                <label>Código del Equipo</label>
+                <input type="text" id="equipoCodigo" required>
+            </div>
+            <div class="form-group">
+                <label>Laboratorio</label>
+                <select id="equipoLaboratorio" required></select>
+            </div>
+            <div class="form-group">
+                <label>Estado</label>
+                <select id="equipoEstado">
+                    <option value="DISPONIBLE">Disponible</option>
+                    <option value="MANTENIMIENTO">En Mantenimiento</option>
+                    <option value="FUERA_SERVICIO">Fuera de Servicio</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-neutral" onclick="cerrarModal('modalEquipo')">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let equipos = [];
+    let laboratorios = [];
+    let equipoEditando = null;
+
+    async function cargarLaboratorios() {
+        try {
+            const res = await fetch('/api/laboratorios/');
+            laboratorios = await res.json();
+
+            // Llenar filtros y modal
+            const filterSelect = document.getElementById('laboratorioFilter');
+            const modalSelect = document.getElementById('equipoLaboratorio');
+
+            laboratorios.forEach(lab => {
+                filterSelect.innerHTML += `<option value="${lab.id}">${lab.nombre}</option>`;
+                modalSelect.innerHTML += `<option value="${lab.id}">${lab.nombre}</option>`;
+            });
+        } catch (error) {
+            console.error('Error cargando laboratorios:', error);
+        }
+    }
+
+    async function cargarEquipos() {
+        try {
+            const res = await fetch('/api/equipos/');
+            equipos = await res.json();
+            aplicarFiltros();
+        } catch (error) {
+            console.error('Error cargando equipos:', error);
+        }
+    }
+
+    function aplicarFiltros() {
+        const labFilter = document.getElementById('laboratorioFilter').value;
+        const estadoFilter = document.getElementById('estadoFilter').value;
+
+        let filtered = [...equipos];
+
+        if (labFilter) {
+            filtered = filtered.filter(e => e.laboratorio == labFilter);
+        }
+
+        if (estadoFilter) {
+            filtered = filtered.filter(e => e.estado === estadoFilter);
+        }
+
+        renderEquipos(filtered);
+    }
+
+    function renderEquipos(data) {
+        const grid = document.getElementById('equiposGrid');
+        const empty = document.getElementById('empty');
+
+        if (!data || data.length === 0) {
+            grid.style.display = 'none';
+            empty.style.display = 'block';
+            return;
+        }
+
+        grid.style.display = 'grid';
+        empty.style.display = 'none';
+        grid.innerHTML = '';
+
+        data.forEach(equipo => {
+            const card = document.createElement('div');
+            card.className = 'equipo-card';
+
+            const estadoClass = equipo.estado === 'DISPONIBLE' ? 'estado-disponible' :
+                equipo.estado === 'MANTENIMIENTO' ? 'estado-mantenimiento' : 'estado-fuera';
+
+            const labNombre = laboratorios.find(l => l.id === equipo.laboratorio)?.nombre || 'Laboratorio';
+
+            card.innerHTML = `
+      <div class="equipo-header">
+        <strong style="font-size:18px">${equipo.codigo}</strong>
+        <span class="equipo-estado ${estadoClass}">${equipo.estado.replace('_', ' ')}</span>
+      </div>
+      <div style="color:var(--muted);margin-bottom:12px">
+        📍 ${labNombre}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-neutral" onclick="editarEquipo(${equipo.id})">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminarEquipo(${equipo.id})">Eliminar</button>
+      </div>
+    `;
+
+            grid.appendChild(card);
+        });
+    }
+
+    function abrirModal() {
+        equipoEditando = null;
+        document.getElementById('modalTitle').textContent = 'Nuevo Equipo';
+        document.getElementById('formEquipo').reset();
+        document.getElementById('modalEquipo').style.display = 'block';
+    }
+
+    function cerrarModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    async function editarEquipo(id) {
+        const equipo = equipos.find(e => e.id === id);
+        if (!equipo) return;
+
+        equipoEditando = equipo;
+        document.getElementById('modalTitle').textContent = 'Editar Equipo';
+        document.getElementById('equipoCodigo').value = equipo.codigo;
+        document.getElementById('equipoLaboratorio').value = equipo.laboratorio;
+        document.getElementById('equipoEstado').value = equipo.estado;
+        document.getElementById('modalEquipo').style.display = 'block';
+    }
+
+    async function eliminarEquipo(id) {
+        if (!confirm('¿Estás seguro de eliminar este equipo?')) return;
+
+        try {
+            const res = await fetch(`/api/equipos/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            if (res.ok) {
+                alert('Equipo eliminado exitosamente');
+                cargarEquipos();
+            } else {
+                alert('Error al eliminar equipo');
+            }
+        } catch (error) {
+            alert('Error de conexión');
+        }
+    }
+
+    document.getElementById('formEquipo').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const data = {
+            codigo: document.getElementById('equipoCodigo').value,
+            laboratorio: parseInt(document.getElementById('equipoLaboratorio').value),
+            estado: document.getElementById('equipoEstado').value
+        };
+
+        try {
+            const url = equipoEditando ? `/api/equipos/${equipoEditando.id}/` : '/api/equipos/';
+            const method = equipoEditando ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert(equipoEditando ? 'Equipo actualizado' : 'Equipo creado exitosamente');
+                cerrarModal('modalEquipo');
+                cargarEquipos();
+            } else {
+                const error = await res.json();
+                alert('Error: ' + JSON.stringify(error));
+            }
+        } catch (error) {
+            alert('Error de conexión');
+        }
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Event listeners
+    document.getElementById('applyFilters').addEventListener('click', aplicarFiltros);
+    document.getElementById('clearFilters').addEventListener('click', () => {
+        document.getElementById('laboratorioFilter').value = '';
+        document.getElementById('estadoFilter').value = '';
+        aplicarFiltros();
+    });
+    document.getElementById('nuevoEquipo').addEventListener('click', abrirModal);
+
+    // Cargar datos al inicio
+    cargarLaboratorios();
+    cargarEquipos();
+</script>
+{% endblock %}

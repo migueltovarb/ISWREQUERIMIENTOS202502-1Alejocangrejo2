@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inicio de Sesión • Sistema de Laboratorios</title>
+    <style>
+        :root {
+            --bg: #0b0c0f;
+            --panel: #111318;
+            --line: #1b1f2a;
+            --text: #e7e9ee;
+            --muted: #a6adbb;
+            --brand: #4da3ff;
+            --accent: #2b87ff;
+            --ok: #3ddc97;
+            --warn: #ffb020;
+            --danger: #ff5a5a;
+            --radius: 14px
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+            background: radial-gradient(1200px 600px at 15% -10%, #142034 20%, transparent 60%), var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .wrap {
+            max-width: 500px;
+            width: 100%;
+            padding: 0 16px
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent 30%), var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+            padding: 24px
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            text-align: center
+        }
+
+        .lead {
+            margin: 0 0 24px;
+            color: var(--muted);
+            font-size: 14px;
+            text-align: center
+        }
+
+        label {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0 0 6px
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #0d1118;
+            border: 1px solid var(--line);
+            color: var(--text);
+            font-size: 15px
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(77, 163, 255, .15)
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: #0d1118;
+            color: var(--text);
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            margin-top: 8px
+        }
+
+        .btn.primary {
+            border-color: transparent;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .08), transparent 40%), var(--brand);
+            color: #fff
+        }
+
+        .btn:hover {
+            border-color: var(--accent)
+        }
+
+        .status {
+            margin-top: 16px;
+            font-size: 13px;
+            padding: 12px;
+            border-radius: 10px;
+            display: none
+        }
+
+        .status.show {
+            display: block
+        }
+
+        .status.ok {
+            background: rgba(61, 220, 151, .1);
+            border: 1px solid rgba(61, 220, 151, .3);
+            color: var(--ok)
+        }
+
+        .status.danger {
+            background: rgba(255, 77, 77, .1);
+            border: 1px solid rgba(255, 77, 77, .3);
+            color: var(--danger)
+        }
+
+        .status.warn {
+            background: rgba(255, 176, 32, .1);
+            border: 1px solid rgba(255, 176, 32, .3);
+            color: var(--warn)
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 12px;
+            margin-bottom: 16px
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: #0b1323;
+            color: var(--muted);
+            font-size: 11px
+        }
+
+        .sep {
+            height: 1px;
+            background: var(--line);
+            margin: 20px 0
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: end
+        }
+    </style>
+</head>
+
+<body>
+    <main class="wrap">
+        <div class="card">
+            <h1>Inicio de sesión</h1>
+            <p class="lead">Sistema de Gestión de Laboratorios</p>
+
+            <form id="loginForm" method="POST" action="{% url 'login' %}" autocomplete="on">
+                {% csrf_token %}
+
+                <div>
+                    <label for="username">Correo institucional</label>
+                    <input id="username" name="username" type="text" placeholder="usuario@institucion.edu" required
+                        autofocus />
+                </div>
+
+                <div style="margin-top:16px">
+                    <label for="password">Contraseña</label>
+                    <div class="grid2">
+                        <input id="password" name="password" type="password" placeholder="••••••••" minlength="6"
+                            required />
+                        <button class="btn" type="button" id="togglePwd" style="width:auto;margin:0">Mostrar</button>
+                    </div>
+                </div>
+
+                <div class="meta">
+                    <span>Intentos fallidos: <strong id="failCount">0</strong>/5</span>
+                    <span id="lockInfo" class="badge" style="display:none">Bloqueado <span id="lockTimer"></span></span>
+                </div>
+
+                <button type="submit" class="btn primary" id="btnLogin">Iniciar Sesión</button>
+
+                <div id="status" class="status"></div>
+            </form>
+
+            <div class="sep"></div>
+
+            <p style="text-align:center;font-size:13px;color:var(--muted);margin:0">
+                ¿No tienes cuenta? Contacta al administrador
+            </p>
+        </div>
+    </main>
+
+    <script>
+        const $ = s => document.querySelector(s);
+        const STATUS = $('#status');
+
+        function setStatus(msg, tone = '') {
+            STATUS.textContent = msg;
+            STATUS.className = 'status show ' + (tone || '');
+        }
+
+        // Toggle password visibility
+        $('#togglePwd').addEventListener('click', () => {
+            const ip = $('#password');
+            ip.type = ip.type === 'password' ? 'text' : 'password';
+            $('#togglePwd').textContent = ip.type === 'password' ? 'Mostrar' : 'Ocultar';
+        });
+
+        // Handle Django messages
+        {% if messages %}
+        {% for message in messages %}
+        setStatus('{{ message }}', '{% if message.tags %}{{ message.tags }}{% endif %}');
+        {% endfor %}
+        {% endif %}
+
+        // Form validation
+        $('#loginForm').addEventListener('submit', (e) => {
+            const username = $('#username').value.trim();
+            const password = $('#password').value;
+
+            if (!username || !password) {
+                e.preventDefault();
+                setStatus('Completa todos los campos', 'warn');
+                return false;
+            }
+        });
+    </script>
+</body>
+
+</html>

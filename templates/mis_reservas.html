@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .filters {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap
+    }
+
+    .filters select,
+    .filters input {
+        padding: 10px;
+        border-radius: 0;
+        border: 1px solid var(--line);
+        background: #0d1118;
+        color: var(--text)
+    }
+
+    .list {
+        display: grid;
+        gap: 12px
+    }
+
+    .item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 0;
+        padding: 14px;
+        background: #0d1118
+    }
+
+    .badge {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 0;
+        border: 1px solid var(--line);
+        color: var(--muted)
+    }
+
+    .badge.activa {
+        background: #102015;
+        color: #a7efc9;
+        border-color: #204a36
+    }
+
+    .badge.cancelada {
+        background: #2a1215;
+        color: #ffb3b6;
+        border-color: #4a1f24
+    }
+
+    .badge.completada {
+        background: #0f1524;
+        color: #c6d0e3;
+        border-color: #2a3450
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%
+    }
+
+    .dot.ok {
+        background: var(--ok)
+    }
+
+    .dot.cancelled {
+        background: var(--danger)
+    }
+
+    .dot.completed {
+        background: var(--muted)
+    }
+
+    .empty {
+        padding: 40px;
+        text-align: center;
+        color: var(--muted);
+        border: 1px dashed var(--line);
+        border-radius: 0
+    }
+
+    @media (max-width:768px) {
+        .item {
+            grid-template-columns: 1fr
+        }
+    }
+</style>
+
+<h1 class="mb-3">Mis Reservas</h1>
+<p class="lead" style="color:var(--muted);margin-bottom:24px">
+    Gestiona tus reservas activas, completadas y canceladas
+</p>
+
+<div class="filters">
+    <select id="estadoFilter">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVA" selected>Activas</option>
+        <option value="COMPLETADA">Completadas</option>
+        <option value="CANCELADA">Canceladas</option>
+    </select>
+    <input type="date" id="dateFilter" placeholder="Filtrar por fecha">
+    <button class="btn btn-primary" id="applyFilters">Filtrar</button>
+    <button class="btn btn-neutral" id="clearFilters">Limpiar</button>
+</div>
+
+<div id="list" class="list"></div>
+<div id="empty" class="empty" style="display:none">
+    No tienes reservas para mostrar
+</div>
+
+<script>
+    let reservas = [];
+
+    async function cargarReservas() {
+        try {
+            const res = await fetch('/api/reservas/');
+            const data = await res.json();
+
+            // Filtrar solo las reservas del usuario actual
+            // En producción, esto debería venir filtrado desde el backend
+            reservas = data;
+
+            aplicarFiltros();
+        } catch (error) {
+            console.error('Error cargando reservas:', error);
+        }
+    }
+
+    function aplicarFiltros() {
+        const estadoFilter = document.getElementById('estadoFilter').value;
+        const dateFilter = document.getElementById('dateFilter').value;
+
+        let filtered = [...reservas];
+
+        if (estadoFilter) {
+            filtered = filtered.filter(r => r.estado === estadoFilter);
+        }
+
+        if (dateFilter) {
+            filtered = filtered.filter(r => {
+                const fecha = new Date(r.fecha_inicio).toISOString().slice(0, 10);
+                return fecha === dateFilter;
+            });
+        }
+
+        renderReservas(filtered);
+    }
+
+    function renderReservas(data) {
+        const list = document.getElementById('list');
+        const empty = document.getElementById('empty');
+
+        if (!data || data.length === 0) {
+            list.style.display = 'none';
+            empty.style.display = 'block';
+            return;
+        }
+
+        list.style.display = 'grid';
+        empty.style.display = 'none';
+        list.innerHTML = '';
+
+        data.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'item';
+
+            const inicio = new Date(r.fecha_inicio);
+            const fin = new Date(r.fecha_fin);
+            const ahora = new Date();
+            const puedeCancelar = r.estado === 'ACTIVA' && inicio > ahora;
+
+            const estadoClass = r.estado.toLowerCase();
+            const dotClass = r.estado === 'ACTIVA' ? 'ok' : r.estado === 'CANCELADA' ? 'cancelled' : 'completed';
+
+            div.innerHTML = `
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <strong style="font-size:16px">${r.equipo_codigo || 'Equipo'}</strong>
+          <span class="badge ${estadoClass}">
+            <span class="dot ${dotClass}"></span>
+            ${r.estado}
+          </span>
+        </div>
+        <div style="color:var(--muted);font-size:14px">
+          ${inicio.toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <br>
+          ${inicio.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })} – 
+          ${fin.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${puedeCancelar ? `<button class="btn btn-danger btn-sm" onclick="cancelarReserva(${r.id})">Cancelar</button>` : ''}
+        <button class="btn btn-neutral btn-sm" onclick="verDetalles(${r.id})">Ver Detalles</button>
+      </div>
+    `;
+
+            list.appendChild(div);
+        });
+    }
+
+    async function cancelarReserva(id) {
+        if (!confirm('¿Estás seguro de cancelar esta reserva?')) return;
+
+        try {
+            const res = await fetch(`/api/reservas/${id}/cancelar/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            if (res.ok) {
+                alert('Reserva cancelada exitosamente');
+                cargarReservas();
+            } else {
+                const error = await res.json();
+                alert('Error: ' + JSON.stringify(error));
+            }
+        } catch (error) {
+            alert('Error de conexión');
+        }
+    }
+
+    function verDetalles(id) {
+        const reserva = reservas.find(r => r.id === id);
+        if (!reserva) return;
+
+        const inicio = new Date(reserva.fecha_inicio);
+        const fin = new Date(reserva.fecha_fin);
+
+        alert(`
+Detalles de Reserva:
+━━━━━━━━━━━━━━━━━
+Equipo: ${reserva.equipo_codigo || 'N/A'}
+Estado: ${reserva.estado}
+Fecha: ${inicio.toLocaleDateString('es')}
+Hora: ${inicio.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })} – ${fin.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+  `);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Event listeners
+    document.getElementById('applyFilters').addEventListener('click', aplicarFiltros);
+    document.getElementById('clearFilters').addEventListener('click', () => {
+        document.getElementById('estadoFilter').value = '';
+        document.getElementById('dateFilter').value = '';
+        aplicarFiltros();
+    });
+
+    // Cargar datos al inicio
+    cargarReservas();
+</script>
+{% endblock %}

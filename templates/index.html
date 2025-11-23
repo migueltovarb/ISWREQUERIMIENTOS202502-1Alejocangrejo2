@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 80px 20px;
+        background: linear-gradient(135deg, rgba(77, 163, 255, 0.1), rgba(38, 198, 218, 0.05));
+        border-radius: 0;
+        margin-bottom: 40px;
+    }
+
+    .hero h1 {
+        font-size: clamp(32px, 5vw, 48px);
+        margin-bottom: 16px;
+    }
+
+    .hero p {
+        font-size: 18px;
+        color: var(--muted);
+        max-width: 600px;
+        margin: 0 auto 32px;
+    }
+
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+
+    .feature {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 0;
+        padding: 24px;
+        transition: transform 0.2s;
+    }
+
+    .feature:hover {
+        transform: translateY(-4px);
+        border-color: var(--brand);
+    }
+
+    .feature-icon {
+        font-size: 40px;
+        margin-bottom: 16px;
+    }
+
+    .feature h3 {
+        margin: 0 0 12px;
+        font-size: 20px;
+    }
+
+    .feature p {
+        color: var(--muted);
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .cta {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+</style>
+
+<div class="hero">
+    <h1>Sistema de Gestión de Laboratorios</h1>
+    <p>Reserva equipos, gestiona horarios y controla el aforo en tiempo real</p>
+    <div class="cta">
+        {% if user.is_authenticated %}
+        <a href="{% url 'calendario' %}" class="btn btn-primary">Ver Calendario</a>
+        <a href="{% url 'mis_reservas' %}" class="btn btn-neutral">Mis Reservas</a>
+        {% else %}
+        <a href="{% url 'login' %}" class="btn btn-primary">Iniciar Sesión</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature">
+        <div class="feature-icon">📅</div>
+        <h3>Reservas en Tiempo Real</h3>
+        <p>Consulta disponibilidad y reserva equipos de laboratorio al instante</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>Dashboard Administrativo</h3>
+        <p>Métricas en tiempo real, KPIs y gestión completa del sistema</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">🔔</div>
+        <h3>Notificaciones Automáticas</h3>
+        <p>Recibe alertas de confirmación, recordatorios y cambios importantes</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">🛠️</div>
+        <h3>Gestión de Mantenimiento</h3>
+        <p>Bloquea equipos por mantenimiento y programa tareas recurrentes</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">👥</div>
+        <h3>Control de Aforo</h3>
+        <p>Gestiona límites de capacidad y lista de espera automática</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">📈</div>
+        <h3>Reportes y Exportación</h3>
+        <p>Genera reportes PDF y exporta datos en Excel/CSV</p>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<div class="card">
+    <div class="card-header">Acceso Rápido</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px">
+        <a href="{% url 'calendario' %}" class="btn btn-primary" style="text-decoration:none">📅 Hacer Reserva</a>
+        <a href="{% url 'mis_reservas' %}" class="btn btn-neutral" style="text-decoration:none">📋 Mis Reservas</a>
+        {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-neutral" style="text-decoration:none">📊 Dashboard
+            Admin</a>
+        <a href="{% url 'gestion_equipos' %}" class="btn btn-neutral" style="text-decoration:none">🛠️ Gestión
+            Equipos</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
